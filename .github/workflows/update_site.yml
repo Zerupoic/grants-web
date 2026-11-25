@@ -6,28 +6,22 @@ on:
     - cron: '1 5 * * 1'
   workflow_dispatch:
 
-permissions:
-  contents: write   # commit the new CSV and eligibility cache back to the repo
-  pages: write
-  id-token: write
-
 concurrency:
   group: update-site
   cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
+    permissions:
+      contents: write   # commit the new CSV and eligibility cache back to the repo
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
           cache: pip
@@ -63,6 +57,18 @@ jobs:
         with:
           path: site
 
+  # Deploy runs as its own job so the uploaded artifact is listed by the time it looks for it
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+
+    steps:
       - name: Deploy to GitHub Pages
         id: deploy
         uses: actions/deploy-pages@v4
