@@ -87,6 +87,7 @@ Eligibility description:
         if CACHE_FILE.exists():
             self.cache = json.loads(CACHE_FILE.read_text(encoding="utf-8"))
         self.calls = 0
+        self.failures = 0
         self.client = None
         # DeepSeek models think before answering by default; a one-word label doesn't need it
         self.extra_body = {"thinking": {"type": "disabled"}} if "deepseek" in LLM_BASE_URL else None
@@ -107,12 +108,18 @@ Eligibility description:
             return "need further information"
 
         label = self._ask(text)
+        if label is None:
+            # Call failed: keep the grant for now, but don't cache so the next run retries it
+            self.failures += 1
+            return "need further information"
         self.calls += 1
         self.cache[opp_id] = {"label": label, "hash": text_hash}
         time.sleep(0.5)  # avoid rate limits
         return label
 
-    def _ask(self, text: str) -> str:
+    def _ask(self, text: str):
+        """Return a label, or None if the API call failed."""
+        from openai import AuthenticationError
         try:
             response = self.client.chat.completions.create(
                 model=LLM_MODEL,
@@ -121,9 +128,14 @@ Eligibility description:
                 extra_body=self.extra_body,
             )
             raw = (response.choices[0].message.content or "").strip().lower().strip(" .\"'")
+        except AuthenticationError as e:
+            # "::warning::" shows as an annotation on the GitHub Actions run page
+            print(f"::warning::LLM API key was rejected; skipping the LLM check this run. {e}")
+            self.client = None
+            return None
         except Exception as e:
-            print(f"Error calling the LLM: {e}")
-            return "need further information"
+            print(f"::warning::LLM call failed: {e}")
+            return None
         # Check "not eligible" before "eligible" since one contains the other
         for label in ("not eligible", "need further information", "eligible"):
             if label in raw:
@@ -321,7 +333,7 @@ def main():
         judge.save()
     print(f"New grants kept: {len(new_grants)} of {len(df_new)}")
     print(f"Still-open grants kept: {len(old_grants)} of {len(df_old)}")
-    print(f"LLM calls this run: {judge.calls}")
+    print(f"LLM calls this run: {judge.calls} answered, {judge.failures} failed")
 
     SITE_DIR.mkdir(exist_ok=True)
     (SITE_DIR / "index.html").write_text(
