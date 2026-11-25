@@ -37,7 +37,10 @@ jobs:
 
       - name: Build site
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          # Optional repo variables; empty means the DeepSeek defaults in build_site.py
+          LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}
+          LLM_MODEL: ${{ vars.LLM_MODEL }}
         run: python build_site.py
 
       - name: Save downloaded data to the repo

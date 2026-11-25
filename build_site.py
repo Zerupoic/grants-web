@@ -3,12 +3,16 @@
 - Compares the latest grants_data/grantsgov_*.csv with the previous one to split
   grants into "new this week" and "still open".
 - Keeps grants open to higher-education applicants: applicant_types lists
-  higher_education, or applicant_types is "other" and an OpenAI check of the
+  higher_education, or applicant_types is "other" and an LLM check of the
   eligibility description says eligible / needs further information.
 - Writes site/index.html and site/grantsgov_latest.csv.
 
-Set OPENAI_API_KEY in the environment. Without it, "other" grants are kept and
-tagged "needs review" so the page can still be built locally.
+LLM settings come from the environment (any OpenAI-compatible API works):
+  LLM_API_KEY   required for the LLM check
+  LLM_BASE_URL  default https://api.deepseek.com  (OpenAI: https://api.openai.com/v1)
+  LLM_MODEL     default deepseek-flash            (OpenAI: gpt-4o-mini)
+Without LLM_API_KEY, "other" grants are kept and tagged "needs review" so the
+page can still be built locally.
 """
 import glob
 import hashlib
@@ -29,8 +33,8 @@ SITE_DIR = ROOT / "site"
 TEMPLATE = ROOT / "templates" / "index.html"
 CACHE_FILE = DATA_DIR / "eligibility_cache.json"
 
-OPENAI_MODEL = "gpt-4o-mini"
-OPENAI_BASE_URL = "https://us.api.openai.com/v1"
+LLM_BASE_URL = os.getenv("LLM_BASE_URL") or "https://api.deepseek.com"
+LLM_MODEL = os.getenv("LLM_MODEL") or "deepseek-flash"
 LABELS = ("eligible", "not eligible", "need further information")
 KEEP_LABELS = ("eligible", "need further information")
 CLOSING_SOON_DAYS = 30
@@ -61,7 +65,7 @@ def split_new_old(df_latest: pd.DataFrame, df_prev: pd.DataFrame):
 # ------------------------------------------------------- eligibility filtering
 
 class EligibilityJudge:
-    """OpenAI eligibility check with an on-disk cache keyed by opportunity id."""
+    """LLM eligibility check with an on-disk cache keyed by opportunity id."""
 
     PROMPT = """
 You are reading a grant eligibility description.
@@ -84,12 +88,15 @@ Eligibility description:
             self.cache = json.loads(CACHE_FILE.read_text(encoding="utf-8"))
         self.calls = 0
         self.client = None
-        api_key = os.getenv("OPENAI_API_KEY")
+        # DeepSeek models think before answering by default; a one-word label doesn't need it
+        self.extra_body = {"thinking": {"type": "disabled"}} if "deepseek" in LLM_BASE_URL else None
+        api_key = os.getenv("LLM_API_KEY")
         if api_key:
             from openai import OpenAI
-            self.client = OpenAI(api_key=api_key, base_url=OPENAI_BASE_URL)
+            self.client = OpenAI(api_key=api_key, base_url=LLM_BASE_URL)
+            print(f"LLM check: {LLM_MODEL} at {LLM_BASE_URL}")
         else:
-            print("Warning: OPENAI_API_KEY is not set; 'other' grants will be kept as 'need further information'.")
+            print("Warning: LLM_API_KEY is not set; 'other' grants will be kept as 'need further information'.")
 
     def judge(self, opp_id: str, text: str) -> str:
         text_hash = hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
@@ -108,13 +115,14 @@ Eligibility description:
     def _ask(self, text: str) -> str:
         try:
             response = self.client.chat.completions.create(
-                model=OPENAI_MODEL,
+                model=LLM_MODEL,
                 messages=[{"role": "user", "content": self.PROMPT.format(text=text)}],
                 temperature=0,
+                extra_body=self.extra_body,
             )
-            raw = response.choices[0].message.content.strip().lower().strip(" .\"'")
+            raw = (response.choices[0].message.content or "").strip().lower().strip(" .\"'")
         except Exception as e:
-            print(f"Error calling OpenAI: {e}")
+            print(f"Error calling the LLM: {e}")
             return "need further information"
         # Check "not eligible" before "eligible" since one contains the other
         for label in ("not eligible", "need further information", "eligible"):
@@ -313,7 +321,7 @@ def main():
         judge.save()
     print(f"New grants kept: {len(new_grants)} of {len(df_new)}")
     print(f"Still-open grants kept: {len(old_grants)} of {len(df_old)}")
-    print(f"OpenAI calls this run: {judge.calls}")
+    print(f"LLM calls this run: {judge.calls}")
 
     SITE_DIR.mkdir(exist_ok=True)
     (SITE_DIR / "index.html").write_text(
