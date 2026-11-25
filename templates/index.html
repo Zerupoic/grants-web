@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grant Opportunities</title>
+<meta name="description" content="Grants.gov opportunities open to higher-education applicants, updated weekly.">
+<style>
+  :root {
+    --bg: #f6f5f1;
+    --surface: #ffffff;
+    --text: #1d2125;
+    --muted: #5d6670;
+    --border: #dcdad3;
+    --accent: #1f5f8b;
+    --soon-bg: #fdecea;
+    --soon-text: #a1281c;
+    --soon-edge: #d9534f;
+    --he-bg: #e5f3ea;
+    --he-text: #1e6b3a;
+    --ai-bg: #e6eef8;
+    --ai-text: #23558c;
+    --rev-bg: #fbf1dc;
+    --rev-text: #8a5a00;
+    --shadow: 0 1px 2px rgba(0,0,0,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15181b;
+      --surface: #1e2226;
+      --text: #e6e8ea;
+      --muted: #9aa3ad;
+      --border: #333a41;
+      --accent: #7db7e3;
+      --soon-bg: #3a1e1c;
+      --soon-text: #f2a39b;
+      --soon-edge: #e0665c;
+      --he-bg: #183323;
+      --he-text: #8fd6a8;
+      --ai-bg: #1a2a3d;
+      --ai-text: #9cc3ee;
+      --rev-bg: #362a12;
+      --rev-text: #f0c76e;
+      --shadow: none;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15181b; --surface: #1e2226; --text: #e6e8ea; --muted: #9aa3ad; --border: #333a41;
+    --accent: #7db7e3; --soon-bg: #3a1e1c; --soon-text: #f2a39b; --soon-edge: #e0665c;
+    --he-bg: #183323; --he-text: #8fd6a8; --ai-bg: #1a2a3d; --ai-text: #9cc3ee;
+    --rev-bg: #362a12; --rev-text: #f0c76e; --shadow: none;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  a { color: var(--accent); }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 0 16px; }
+
+  header { padding: 40px 0 20px; }
+  header h1 { font-size: 30px; line-height: 1.2; margin: 0 0 6px; letter-spacing: -.01em; }
+  header .lede { margin: 0; color: var(--muted); max-width: 60ch; }
+  .stats { display: flex; flex-wrap: wrap; gap: 10px 28px; margin: 22px 0 6px; padding: 0; list-style: none; }
+  .stats li { display: flex; flex-direction: column; }
+  .stats b { font-size: 26px; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .stats span { color: var(--muted); font-size: 13px; }
+  .source { color: var(--muted); font-size: 13px; margin: 14px 0 0; }
+
+  .controls {
+    position: sticky; top: 0; z-index: 5; background: var(--bg);
+    border-bottom: 1px solid var(--border); padding: 12px 0;
+  }
+  .controls .wrap { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+  .controls input[type="search"], .controls select {
+    font: inherit; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px;
+  }
+  .controls input[type="search"] { flex: 1 1 240px; min-width: 0; }
+  .controls label { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 14px; }
+
+  .group { margin: 30px 0 10px; }
+  .group-head h2 { font-size: 20px; margin: 0; display: flex; align-items: baseline; gap: 10px; }
+  .group-head p { margin: 2px 0 14px; color: var(--muted); font-size: 14px; }
+  .count {
+    font-size: 13px; font-weight: 600; color: var(--muted); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 999px; padding: 0 9px;
+  }
+  .cards { display: grid; gap: 12px; }
+  .empty { color: var(--muted); font-style: italic; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 16px 18px; box-shadow: var(--shadow);
+  }
+  .card-soon { border-left: 4px solid var(--soon-edge); }
+  .card-head { display: flex; gap: 12px; justify-content: space-between; align-items: flex-start; }
+  .card h3 { font-size: 16.5px; line-height: 1.35; margin: 0; overflow-wrap: anywhere; }
+  .card h3 a { color: var(--text); text-decoration: none; }
+  .card h3 a:hover { color: var(--accent); text-decoration: underline; }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; flex-shrink: 0; max-width: 45%; }
+  .badge { font-size: 12px; font-weight: 600; border-radius: 4px; padding: 2px 8px; white-space: nowrap; }
+  .badge-soon { background: var(--soon-bg); color: var(--soon-text); }
+  .badge-higher-ed { background: var(--he-bg); color: var(--he-text); }
+  .badge-llm-eligible { background: var(--ai-bg); color: var(--ai-text); }
+  .badge-llm-review { background: var(--rev-bg); color: var(--rev-text); }
+  .meta { color: var(--muted); font-size: 13px; margin: 4px 0 12px; overflow-wrap: anywhere; }
+  dl { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 16px; margin: 0; }
+  dl div { min-width: 0; }
+  dt { font-size: 12px; color: var(--muted); }
+  dd { margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  details { margin-top: 12px; font-size: 14px; }
+  summary { cursor: pointer; color: var(--accent); }
+  details p { margin: 8px 0 0; color: var(--muted); }
+
+  footer { color: var(--muted); font-size: 13px; padding: 30px 0 50px; }
+
+  @media (max-width: 600px) {
+    header h1 { font-size: 24px; }
+    .card-head { flex-direction: column; }
+    .badges { justify-content: flex-start; max-width: none; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Grant Opportunities</h1>
+    <p class="lede">Grants.gov opportunities open to higher-education applicants, refreshed every Monday.</p>
+    <ul class="stats">
+      <li><b>{{TOTAL}}</b><span>open grants</span></li>
+      <li><b>{{NEW_COUNT}}</b><span>new this week</span></li>
+      <li><b>{{SOON_COUNT}}</b><span>close within 30 days</span></li>
+    </ul>
+    <p class="source">Data from {{DATA_DATE}}. {{COMPARED}}. <a href="grantsgov_latest.csv" download>Download the full CSV</a></p>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="wrap">
+    <input type="search" id="q" placeholder="Search title, number, agency, summary" aria-label="Search grants">
+    <select id="elig" aria-label="Eligibility">
+      <option value="">All eligibility</option>
+      <option value="higher-ed">Higher-ed listed</option>
+      <option value="llm-eligible">Eligible (AI check)</option>
+      <option value="llm-review">Needs review</option>
+    </select>
+    <label><input type="checkbox" id="soon"> Closing within 30 days</label>
+  </div>
+</div>
+
+<main class="wrap">
+  {{SECTIONS}}
+</main>
+
+<footer>
+  <div class="wrap">
+    Grants are kept when their applicant types list higher education, or when the type is "other" and an AI read of the eligibility text says higher-ed can apply or the text is unclear. Check each opportunity's own notice before applying. Built {{BUILT_AT}}.
+  </div>
+</footer>
+
+<script>
+(function () {
+  var q = document.getElementById('q');
+  var elig = document.getElementById('elig');
+  var soon = document.getElementById('soon');
+
+  function apply() {
+    var terms = q.value.toLowerCase().split(/\s+/).filter(Boolean);
+    var e = elig.value;
+    var s = soon.checked;
+    document.querySelectorAll('.group').forEach(function (group) {
+      var cards = group.querySelectorAll('.card');
+      var shown = 0;
+      cards.forEach(function (card) {
+        var text = card.getAttribute('data-search');
+        var ok = terms.every(function (t) { return text.indexOf(t) !== -1; })
+          && (!e || card.getAttribute('data-elig') === e)
+          && (!s || card.getAttribute('data-soon') === '1');
+        card.hidden = !ok;
+        if (ok) shown++;
+      });
+      var count = group.querySelector('.count');
+      var total = count.getAttribute('data-total');
+      count.textContent = shown == total ? total : shown + ' of ' + total;
+      group.querySelector('.empty').hidden = shown > 0;
+    });
+  }
+
+  q.addEventListener('input', apply);
+  elig.addEventListener('change', apply);
+  soon.addEventListener('change', apply);
+})();
+</script>
+</body>
+</html>
