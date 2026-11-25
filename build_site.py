@@ -169,7 +169,7 @@ def filter_grants(df: pd.DataFrame, judge: EligibilityJudge) -> list[dict]:
 # ------------------------------------------------------------------- rendering
 
 ELIGIBILITY_TAGS = {
-    "higher-ed": ("Higher-ed listed", "Applicant types list higher education"),
+    "higher-ed": ("Higher-education listed", "Applicant types list higher education"),
     "llm-eligible": ("Eligible (AI check)", "Applicant type is 'other'; an AI read of the eligibility text says higher-ed can apply"),
     "llm-review": ("Needs review", "Applicant type is 'other'; eligibility for higher-ed is unclear from the text"),
 }
